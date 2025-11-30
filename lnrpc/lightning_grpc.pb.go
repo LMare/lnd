@@ -432,6 +432,10 @@ type LightningClient interface {
 	// If the htlc has no final resolution yet, a NotFound grpc status code is
 	// returned.
 	LookupHtlcResolution(ctx context.Context, in *LookupHtlcResolutionRequest, opts ...grpc.CallOption) (*LookupHtlcResolutionResponse, error)
+	// Set the Alias of the node server
+	SetAlias(ctx context.Context, in *SetAliasRequest, opts ...grpc.CallOption) (*SetAliasResponse, error)
+	// Set the Alias of the node server
+	SetColor(ctx context.Context, in *SetColorRequest, opts ...grpc.CallOption) (*SetColorResponse, error)
 }
 
 type lightningClient struct {
@@ -1403,6 +1407,24 @@ func (c *lightningClient) LookupHtlcResolution(ctx context.Context, in *LookupHt
 	return out, nil
 }
 
+func (c *lightningClient) SetAlias(ctx context.Context, in *SetAliasRequest, opts ...grpc.CallOption) (*SetAliasResponse, error) {
+	out := new(SetAliasResponse)
+	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/SetAlias", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lightningClient) SetColor(ctx context.Context, in *SetColorRequest, opts ...grpc.CallOption) (*SetColorResponse, error) {
+	out := new(SetColorResponse)
+	err := c.cc.Invoke(ctx, "/lnrpc.Lightning/SetColor", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LightningServer is the server API for Lightning service.
 // All implementations must embed UnimplementedLightningServer
 // for forward compatibility
@@ -1821,6 +1843,10 @@ type LightningServer interface {
 	// If the htlc has no final resolution yet, a NotFound grpc status code is
 	// returned.
 	LookupHtlcResolution(context.Context, *LookupHtlcResolutionRequest) (*LookupHtlcResolutionResponse, error)
+	// Set the Alias of the node server
+	SetAlias(context.Context, *SetAliasRequest) (*SetAliasResponse, error)
+	// Set the Alias of the node server
+	SetColor(context.Context, *SetColorRequest) (*SetColorResponse, error)
 	mustEmbedUnimplementedLightningServer()
 }
 
@@ -2040,6 +2066,12 @@ func (UnimplementedLightningServer) ListAliases(context.Context, *ListAliasesReq
 }
 func (UnimplementedLightningServer) LookupHtlcResolution(context.Context, *LookupHtlcResolutionRequest) (*LookupHtlcResolutionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LookupHtlcResolution not implemented")
+}
+func (UnimplementedLightningServer) SetAlias(context.Context, *SetAliasRequest) (*SetAliasResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAlias not implemented")
+}
+func (UnimplementedLightningServer) SetColor(context.Context, *SetColorRequest) (*SetColorResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetColor not implemented")
 }
 func (UnimplementedLightningServer) mustEmbedUnimplementedLightningServer() {}
 
@@ -3394,6 +3426,42 @@ func _Lightning_LookupHtlcResolution_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Lightning_SetAlias_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetAliasRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LightningServer).SetAlias(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lnrpc.Lightning/SetAlias",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LightningServer).SetAlias(ctx, req.(*SetAliasRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Lightning_SetColor_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetColorRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LightningServer).SetColor(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/lnrpc.Lightning/SetColor",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LightningServer).SetColor(ctx, req.(*SetColorRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Lightning_ServiceDesc is the grpc.ServiceDesc for Lightning service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -3628,6 +3696,14 @@ var Lightning_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LookupHtlcResolution",
 			Handler:    _Lightning_LookupHtlcResolution_Handler,
+		},
+		{
+			MethodName: "SetAlias",
+			Handler:    _Lightning_SetAlias_Handler,
+		},
+		{
+			MethodName: "SetColor",
+			Handler:    _Lightning_SetColor_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

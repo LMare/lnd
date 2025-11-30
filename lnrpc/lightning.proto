@@ -623,6 +623,16 @@ service Lightning {
     */
     rpc LookupHtlcResolution (LookupHtlcResolutionRequest)
         returns (LookupHtlcResolutionResponse);
+
+    /*
+    Set the Alias of the node server
+    */
+    rpc SetAlias (SetAliasRequest) returns (SetAliasResponse);
+
+    /*
+    Set the Alias of the node server
+    */
+    rpc SetColor (SetColorRequest) returns (SetColorResponse);
 }
 
 message LookupHtlcResolutionRequest {
@@ -1751,6 +1761,20 @@ message ListAliasesRequest {
 }
 message ListAliasesResponse {
     repeated AliasMap alias_maps = 1;
+}
+
+message SetAliasRequest {
+    string alias = 1;
+}
+
+message SetAliasResponse {
+}
+
+message SetColorRequest {
+    string color = 1;
+}
+
+message SetColorResponse {
 }
 
 enum Initiator {

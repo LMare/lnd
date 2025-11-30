@@ -7828,6 +7828,12 @@
         }
       }
     },
+    "lnrpcSetAliasResponse": {
+      "type": "object"
+    },
+    "lnrpcSetColorResponse": {
+      "type": "object"
+    },
     "lnrpcSignMessageRequest": {
       "type": "object",
       "properties": {
