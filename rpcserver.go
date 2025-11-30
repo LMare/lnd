@@ -72,6 +72,7 @@ import (
 	"github.com/lightningnetwork/lnd/lnwire"
 	"github.com/lightningnetwork/lnd/macaroons"
 	"github.com/lightningnetwork/lnd/onionmessage"
+	"github.com/lightningnetwork/lnd/netann"
 	paymentsdb "github.com/lightningnetwork/lnd/payments/db"
 	"github.com/lightningnetwork/lnd/peer"
 	"github.com/lightningnetwork/lnd/peernotifier"
@@ -590,6 +591,14 @@ func MainRPCServerPermissions() map[string][]bakery.Op {
 		"/lnrpc.Lightning/ListAliases": {{
 			Entity: "offchain",
 			Action: "read",
+		}},
+		"/lnrpc.Lightning/SetAlias": {{
+			Entity: "info",
+			Action: "write",
+		}},
+		"/lnrpc.Lightning/SetColor": {{
+			Entity: "info",
+			Action: "write",
 		}},
 	}
 }
@@ -1311,6 +1320,81 @@ func (r *rpcServer) EstimateFee(ctx context.Context,
 
 	return resp, nil
 }
+
+// Modify the Alias of the node
+func (r *rpcServer) SetAlias(ctx context.Context, in *lnrpc.SetAliasRequest) (*lnrpc.SetAliasResponse, error) {
+	// get the actual onfo
+	srcNode, err := r.server.graphDB.SourceNode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("can't find the current node: %w", err)
+	}
+	// prepare update label
+	nodeAlias, err := lnwire.NewNodeAlias(in.GetAlias())
+	if err != nil {
+		return nil, fmt.Errorf("alias rejected : %w", err)
+	}
+	srcNode.Alias = fn.Some(nodeAlias.String())
+
+	// Persist the change
+	if err := r.server.graphDB.SetSourceNode(ctx, srcNode); err != nil {
+		return nil, fmt.Errorf("can't set self node: %w", err)
+	}
+
+	// announce the Alias change
+	nodeAnn, err := r.server.genNodeAnnouncement(
+		nil, netann.NodeAnnSetAlias(nodeAlias),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't announce Alias update: %w", err)
+	}
+	// Brocast the announce
+	err = r.server.BroadcastMessage(nil, &nodeAnn)
+	if err != nil {
+		rpcsLog.Debugf("Unable to broadcast new node "+
+			"announcement to peers: %v", err)
+		return nil, err
+	}
+
+	return &lnrpc.SetAliasResponse{}, nil
+}
+
+// Modify the Color of the node
+func (r *rpcServer) SetColor(ctx context.Context, in *lnrpc.SetColorRequest) (*lnrpc.SetColorResponse, error) {
+	// get the actual onfo
+	srcNode, err := r.server.graphDB.SourceNode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("can't find the current node: %w", err)
+	}
+	// prepare update label
+	nodeColor, err := lncfg.ParseHexColor(in.GetColor())
+	if err != nil {
+		return nil, fmt.Errorf("unable to parse color: %w", err)
+	}
+	srcNode.Color = fn.Some(nodeColor)
+
+	// Persist the change
+	if err := r.server.graphDB.SetSourceNode(ctx, srcNode); err != nil {
+		return nil, fmt.Errorf("can't set self node: %w", err)
+	}
+
+	// announce the Alias change
+	nodeAnn, err := r.server.genNodeAnnouncement(
+		nil, netann.NodeAnnSetColor(nodeColor),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("can't announce Alias update: %w", err)
+	}
+	// Brocast the announce
+	err = r.server.BroadcastMessage(nil, &nodeAnn)
+	if err != nil {
+		rpcsLog.Debugf("Unable to broadcast new node "+
+			"announcement to peers: %v", err)
+		return nil, err
+	}
+
+	return &lnrpc.SetColorResponse{}, nil
+}
+
 
 // maybeUseDefaultConf makes sure that when the user doesn't set either the fee
 // rate or conf target, the default conf target is used.
